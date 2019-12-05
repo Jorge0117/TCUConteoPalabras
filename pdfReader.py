@@ -8,6 +8,7 @@ class PdfReader:
     wordCount = {}
 
     def __init__(self, documentName):
+        self.wordCount = {}
         self.documentName = documentName
         self.document = parser.from_file(documentName)
         curatedWords = self.document['content'].replace(',', ' ').replace('.', ' ').replace('(', ' ').replace(')', ' ') \
@@ -24,7 +25,7 @@ class PdfReader:
                 self.wordCount[word] = 1
 
     def getName(self):
-        return self.documentName
+        return self.documentName[self.documentName.rfind('/') + 1:]
 
     def getWords(self):
         return self.words

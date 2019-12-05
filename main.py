@@ -1,3 +1,4 @@
+import os
 '''
 from appJar import gui
 
@@ -8,8 +9,8 @@ app.go()
 '''
 from pdfReader import PdfReader
 from plotter import Plotter
-plotter = Plotter()
 
+'''
 pdf = PdfReader('Converging science and literature cultures_OAHS.pdf')
 data = pdf.getSortedWordCount()
 plotter.generateTextFile(data, pdf.getName())
@@ -26,3 +27,22 @@ combinedData = plotter.addData([pdf.getWordCount(), pdf2.getWordCount()])
 plotter.barPlot(combinedData, 'combined')
 plotter.percentageBarPlot(combinedData)
 plotter.generateTextFile(combinedData, 'Combined data')
+'''
+'''
+pdf = PdfReader('documents/Bibliometry of marine science and limnology publications.pdf')
+data = pdf.getSortedWordCount()
+pdf2 = PdfReader('documents/Evaluation of Microleakage.pdf')
+data2 = pdf2.getSortedWordCount()
+plotter = Plotter([data, data2], 'two test', 2)
+plotter.scatterPlot()
+'''
+
+for doc in os.listdir('documents'):
+
+    pdf = PdfReader('documents/' + doc)
+    data = pdf.getSortedWordCount()
+    plotter = Plotter(data, pdf.getName())
+    #plotter.scatterPlot()
+
+    plotter.barPlot()
+    plotter.percentageBarPlot()
