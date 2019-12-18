@@ -36,13 +36,16 @@ data2 = pdf2.getSortedWordCount()
 plotter = Plotter([data, data2], 'two test', 2)
 plotter.scatterPlot()
 '''
-
+data = []
+names = []
 for doc in os.listdir('documents'):
 
     pdf = PdfReader('documents/' + doc)
-    data = pdf.getSortedWordCount()
-    plotter = Plotter(data, pdf.getName())
-    #plotter.scatterPlot()
+    data.append(pdf.getSortedWordCount())
+    names.append(doc)
 
-    plotter.barPlot()
-    plotter.percentageBarPlot()
+plotter = Plotter(data, 'Primer grupo', names, len(data))
+plotter.scatterPlot()
+
+#plotter.barPlot()
+#plotter.percentageBarPlot()
