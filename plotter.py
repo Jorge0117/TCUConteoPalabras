@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 from math import log
@@ -5,7 +7,7 @@ from math import log
 
 class Plotter:
 
-    def __init__(self, data, title, names, datasets=1):
+    def __init__(self, data, title, names, output, datasets=1):
         if datasets < 1:
             raise Exception('The number of data sets can\'t be less than 1')
         elif datasets == 1:
@@ -15,6 +17,7 @@ class Plotter:
         self.title = title
         self.datasets = datasets
         self.names = names
+        self.output = output
 
     # Data is a list of tuples
     def barPlot(self):
@@ -42,7 +45,9 @@ class Plotter:
         plt.xticks(rotation=90)
         # plt.autoscale()
         # plt.show()
-        plt.savefig('plots/' + self.title + '-bar.png')
+        if not os.path.exists(self.output):
+            os.makedirs(self.output)
+        plt.savefig(self.output + '/' + self.title + '-bar.png')
         plt.close()
 
     def percentageBarPlot(self):
@@ -68,7 +73,9 @@ class Plotter:
         plt.xticks(rotation=90)
         # plt.autoscale()
         # plt.show()
-        plt.savefig('plots/' + self.title + '-percentage.png')
+        if not os.path.exists(self.output):
+            os.makedirs(self.output)
+        plt.savefig(self.output + '/' + self.title + '-percentage.png')
         plt.close()
 
     # Adds the words from multiple documents.
@@ -77,11 +84,11 @@ class Plotter:
         if self.datasets > 1:
             wordCount = {}
             for data in self.data:
-                for key, value in data.items():
-                    if key in wordCount:
-                        wordCount[key] += value
+                for word in data:
+                    if word[0] in wordCount:
+                        wordCount[word[0]] += word[1]
                     else:
-                        wordCount[key] = value
+                        wordCount[word[0]] = word[1]
             return sorted(wordCount.items(), key=lambda kv: kv[1], reverse=True)
         else:
             return self.data[0]
@@ -114,7 +121,9 @@ class Plotter:
             elif i == 4: color = "m"
             elif i == 5: color = "y"
             elif i == 6: color = "k"
-            elif i == 7: color = "w"
+            elif i == 7: color = "#b700b7"
+            elif i == 8: color = "#264b00"
+            elif i == 9: color = "#ff9224"
             # plotting points as a scatter plot
             plt.scatter(rank, frequency, label=i, color=color, s=15)
             # Line of best fit
@@ -133,7 +142,9 @@ class Plotter:
         the_table = plt.table(cellText=tableData, colLabels=('id', 'name', 'm', 'b'), loc='right', colWidths=[0.065, 0.45, 0.065, 0.065], colLoc='center', cellLoc='center')
         plt.subplots_adjust(right=0.6)
 
-        plt.savefig('plots/' + self.title + '.png')
+        if not os.path.exists(self.output):
+            os.makedirs(self.output)
+        plt.savefig(self.output + '/' + self.title + '.png')
         plt.close()
 
     def bestFitSlope(self, x, y):
