@@ -110,7 +110,7 @@ class Plotter:
                 rank.append(log(index + 1, 10))
                 frequency.append(log(self.data[i][index][1], 10))
             tableRow.append(round(self.bestFitSlope(rank, frequency), 2))
-            tableRow.append('b')
+            tableRow.append(round(frequency[0], 2))
             tableData.append(tableRow)
 
             color = ""

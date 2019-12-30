@@ -7,7 +7,7 @@ class PdfReader:
     words = []
     wordCount = {}
 
-    def __init__(self, documentName):
+    def __init__(self, documentName, blacklist):
         self.wordCount = {}
         self.documentName = documentName
         self.document = parser.from_file(documentName)
@@ -15,14 +15,17 @@ class PdfReader:
             .replace(';', ' ').replace(':', ' ').replace('/', ' ').replace('\\', ' ').replace('-', ' ').replace('[',
                                                                                                                 ' ') \
             .replace(']', ' ').replace('-', ' ').replace('*', ' ').replace('|', ' ').replace('’', ' ').replace('%', ' ') \
-            .replace('~', ' ')
+            .replace('~', ' ').replace('&', ' ')
         curatedWords = ''.join([i for i in curatedWords if not i.isdigit()])
         self.words = curatedWords.split()
         for word in self.words:
-            if word in self.wordCount:
-                self.wordCount[word] += 1
+            if word in blacklist:
+                self.words.remove(word)
             else:
-                self.wordCount[word] = 1
+                if word in self.wordCount:
+                    self.wordCount[word] += 1
+                else:
+                    self.wordCount[word] = 1
 
     def getName(self):
         return self.documentName[self.documentName.rfind('/') + 1:]
