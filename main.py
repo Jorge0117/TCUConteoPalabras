@@ -39,8 +39,6 @@ class WordCountPlotter():
 
         app.addLabel("l9", "row=3\ncolumn=1", 6, 1)
 
-
-
         app.stopSubWindow()
 
         self.app = app
@@ -63,26 +61,31 @@ class WordCountPlotter():
         self.app.stopScrollPane()
 
     def SelectFiles(self, btn):
-        files = self.app.openBox(multiple=True)
-        index = int(btn[5:])
-        text = ''
-        self.files[index] = files
+        files = self.app.openBox(multiple=True, fileTypes=[('document', '*.pdf')])
+        if len(files) > 0:
+            index = int(btn[5:])
+            text = ''
 
-        if len(self.files[index]) == 0:
-            self.app.setMessage("Selected Files " + str(index), """No files selected""")
-        else:
-            for i in range(len(self.files[index])):
-                text += self.files[index][i]
-                if i < len(self.files[index]) - 1:
+            for i in range(len(files)):
+                filename, fileExtension = os.path.splitext(files[i])
+                if fileExtension != '.pdf':
+                    self.app.errorBox('File type not accepted', 'The type of the selected file is not accepted. '
+                                                                'Every file has to be a pdf.')
+                    return
+
+                text += files[i]
+                if i < len(files) - 1:
                     text += '\n'
 
-        self.app.setMessage("Selected Files " + str(index), text)
+            self.files[index] = files
+            self.app.setMessage("Selected Files " + str(index), text)
 
     def OpenWordBlacklist(self):
         self.app.showSubWindow('Blacklisted Words')
 
     def AddBLWord(self):
-        word = self.app.stringBox('Blacklist Word', 'Write the word you would like to blacklist', parent='Blacklisted Words')
+        word = self.app.stringBox('Blacklist Word', 'Write the word you would like to blacklist',
+                                  parent='Blacklisted Words')
         if word is not None and word is not '':
             self.app.addListItem('blacklistedWords', word)
 
@@ -95,51 +98,84 @@ class WordCountPlotter():
         self.app.clearListBox('blacklistedWords')
 
     def OpenBLFile(self):
-        fileDir = self.app.openBox(fileTypes=[('text', '*.txt')], parent='Blacklisted Words')
-        if fileDir is not None:
-            file = open(fileDir, 'r')
-            words = file.read().split('\n')
-            for word in words:
-                if word is not '':
-                    self.app.addListItem('blacklistedWords', word)
+        try:
+            fileDir = self.app.openBox(fileTypes=[('text', '*.txt')], parent='Blacklisted Words')
+            filename, fileExtension = os.path.splitext(fileDir)
+
+            if fileDir is not None:
+                if fileExtension != '.txt':
+                    self.app.errorBox('Error', 'The type of the selected file is not accepted. '
+                                                                'Every file has to be a txt.')
+                    return
+
+                file = open(fileDir, 'r', encoding='utf-8')
+                words = file.read().split('\n')
+                for word in words:
+                    if word is not '':
+                        self.app.addListItem('blacklistedWords', word)
+        except Exception as e:
+            self.app.errorBox('Error', 'An error occurred while opening the file. Make sure the format is correct.')
+            print(e)
 
     def SaveBLFile(self):
-        words = self.app.getAllListItems('blacklistedWords')
-        saveDir = self.app.saveBox('Save Location', 'blacklisted_words', fileExt=".txt", parent='Blacklisted Words')
-        if saveDir is not None:
-            file = open(saveDir, 'w', encoding="utf-8")
-            for word in words:
-                file.write(word + '\n')
-            file.close()
-
-    def ConfirmBL(self):
-        pass
+        try:
+            words = self.app.getAllListItems('blacklistedWords')
+            saveDir = self.app.saveBox('Save Location', 'blacklisted_words', fileExt=".txt", parent='Blacklisted Words')
+            if saveDir is not None:
+                file = open(saveDir, 'w', encoding="utf-8")
+                for word in words:
+                    file.write(word + '\n')
+                file.close()
+        except:
+            self.app.errorBox('Error', 'An error occurred while saving the file.')
 
     def Generate(self):
-        saveDir = self.app.directoryBox()
-        blacklist = self.app.getAllListItems('blacklistedWords')
+        if len(self.files) == 0:
+            self.app.errorBox('Error', 'Please add at least one group.')
+            return
+
         for i in range(len(self.files)):
-            data = []
-            names = []
-            for j in range(len(self.files[i])):
-                filename = ntpath.basename(self.files[i][j])
-                pdf = PdfReader(self.files[i][j], blacklist)
-                fileData = pdf.getSortedWordCount()
-                data.append(fileData)
-                names.append(filename)
+            if self.app.getEntry('Group ' + str(i) + ' name') == '':
+                self.app.errorBox('Error', 'Every group has to be named.')
+                return
 
-                plotter = Plotter(fileData, filename, [filename],
-                                  saveDir + '/' + self.app.getEntry('Group ' + str(i) + ' name'))
-                plotter.barPlot()
-                plotter.percentageBarPlot()
-                plotter.scatterPlot()
+            if len(self.files[i]) == 0:
+                self.app.errorBox('Error', 'Every group has to have at least one file.')
+                return
 
-            if len(data) > 1:
-                plotter = Plotter(data, self.app.getEntry('Group ' + str(i) + ' name'), names,
-                                  saveDir + '/' + self.app.getEntry('Group ' + str(i) + ' name'), len(data))
-                plotter.barPlot()
-                plotter.percentageBarPlot()
-                plotter.scatterPlot()
+        saveDir = self.app.directoryBox()
+        if saveDir == '':
+            return
+
+        blacklist = self.app.getAllListItems('blacklistedWords')
+        try:
+            for i in range(len(self.files)):
+                data = []
+                names = []
+                for j in range(len(self.files[i])):
+                    filename = ntpath.basename(self.files[i][j])
+                    pdf = PdfReader(self.files[i][j], blacklist)
+                    fileData = pdf.getSortedWordCount()
+                    data.append(fileData)
+                    names.append(filename)
+
+                    plotter = Plotter(fileData, filename, [filename],
+                                      saveDir + '/' + self.app.getEntry('Group ' + str(i) + ' name'))
+                    plotter.barPlot()
+                    plotter.percentageBarPlot()
+                    plotter.scatterPlot()
+                    # plotter.generateTextFile()
+
+                if len(data) > 1:
+                    plotter = Plotter(data, self.app.getEntry('Group ' + str(i) + ' name'), names,
+                                      saveDir + '/' + self.app.getEntry('Group ' + str(i) + ' name'), len(data))
+                    plotter.barPlot()
+                    plotter.percentageBarPlot()
+                    plotter.scatterPlot()
+        except ValueError:
+            self.app.errorBox('Error', 'An error has occurred while generating the plots. Please try again.')
+
+        return
 
 
 app = WordCountPlotter()
