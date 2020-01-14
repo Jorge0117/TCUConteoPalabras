@@ -6,16 +6,30 @@ from pdfReader import PdfReader
 from plotter import Plotter
 
 
-class WordCountPlotter():
+class WordCountPlotter:
 
     def __init__(self):
         self.groupCount = 0
         app = gui()
+
+        self.options = {
+            'fileExtension': '.pdf',
+            'scatter': True,
+            'bar': True,
+            'barPercentage': True,
+            'lowercase': True,
+            'ignoreOneWord': True,
+            'removeSpecial': True,
+            'groupGraphs': True,
+            'textFile': False
+        }
+
         app.setSize(800, 600)
         app.setResizable(canResize=False)
         app.setTitle("Word count plotter")
         app.addLabel('title', 'Word Count Plotter')
         app.addButton('Blacklist words', self.OpenWordBlacklist)
+        app.addButton('Options', self.OpenOptions)
         app.addButton('Add Group', self.AddGroup)
         app.startScrollPane('groups')
         app.stopScrollPane()
@@ -37,7 +51,32 @@ class WordCountPlotter():
         app.addButton('Load File', self.OpenBLFile, 4, 2)
         app.addButton('Save File', self.SaveBLFile, 5, 2)
 
-        app.addLabel("l9", "row=3\ncolumn=1", 6, 1)
+        app.stopSubWindow()
+
+        app.startSubWindow("Options", modal=True)
+        app.setSize(630, 300)
+        app.setResizable(canResize=False)
+        app.setLocation('center')
+
+        app.setExpand("both")
+        app.addLabel("opTitle", "Options", 0, 0, 3)
+        app.setSticky('w')
+        app.addLabel("output", "Output file extension", 1, 0)
+        app.addRadioButton("outputType", ".pdf", 2, 0)
+        app.addRadioButton("outputType", ".png", 2, 1)
+        app.addLabel("graphTypes", "Output graphs", 3, 0)
+        app.addCheckBox("Scatter", 4, 0)
+        app.addCheckBox("Bar (Word count)", 4, 1)
+        app.addCheckBox("Bar (Word percentage)", 4, 2)
+        app.addLabel("Options", "Options", 5, 0)
+        app.addCheckBox("Lower case", 6, 0)
+        app.addCheckBox("Ignore one character words", 6, 1)
+        app.addCheckBox("Remove special characters", 6, 2)
+        app.addCheckBox("Generate group graphs", 7, 0)
+        app.addCheckBox("Generate text file", 7, 1)
+
+        app.setSticky('')
+        app.addButton("Save", self.SaveOptions, 8, 0, 3)
 
         app.stopSubWindow()
 
@@ -80,6 +119,30 @@ class WordCountPlotter():
             self.files[index] = files
             self.app.setMessage("Selected Files " + str(index), text)
 
+    def OpenOptions(self):
+        self.app.setRadioButton('outputType', self.options['fileExtension'])
+        self.app.setCheckBox('Scatter', self.options['scatter'])
+        self.app.setCheckBox('Bar (Word count)', self.options['bar'])
+        self.app.setCheckBox('Bar (Word percentage)', self.options['barPercentage'])
+        self.app.setCheckBox('Lower case', self.options['lowercase'])
+        self.app.setCheckBox('Ignore one character words', self.options['ignoreOneWord'])
+        self.app.setCheckBox('Remove special characters', self.options['removeSpecial'])
+        self.app.setCheckBox('Generate group graphs', self.options['groupGraphs'])
+        self.app.setCheckBox('Generate text file', self.options['textFile'])
+        self.app.showSubWindow('Options')
+
+    def SaveOptions(self):
+        self.options['fileExtension'] = self.app.getRadioButton('outputType')
+        self.options['scatter'] = self.app.getCheckBox('Scatter')
+        self.options['bar'] = self.app.getCheckBox('Bar (Word count)')
+        self.options['barPercentage'] = self.app.getCheckBox('Bar (Word percentage)')
+        self.options['lowercase'] = self.app.getCheckBox('Lower case')
+        self.options['ignoreOneWord'] = self.app.getCheckBox('Ignore one character words')
+        self.options['removeSpecial'] = self.app.getCheckBox('Remove special characters')
+        self.options['groupGraphs'] = self.app.getCheckBox('Generate group graphs')
+        self.options['textFile'] = self.app.getCheckBox('Generate text file')
+        self.app.hideSubWindow('Options')
+
     def OpenWordBlacklist(self):
         self.app.showSubWindow('Blacklisted Words')
 
@@ -105,7 +168,7 @@ class WordCountPlotter():
             if fileDir is not None:
                 if fileExtension != '.txt':
                     self.app.errorBox('Error', 'The type of the selected file is not accepted. '
-                                                                'Every file has to be a txt.')
+                                               'Every file has to be a txt.')
                     return
 
                 file = open(fileDir, 'r', encoding='utf-8')
@@ -154,24 +217,31 @@ class WordCountPlotter():
                 names = []
                 for j in range(len(self.files[i])):
                     filename = ntpath.basename(self.files[i][j])
-                    pdf = PdfReader(self.files[i][j], blacklist)
+                    pdf = PdfReader(self.files[i][j], blacklist, self.options['lowercase'], self.options['ignoreOneWord'], self.options['removeSpecial'])
                     fileData = pdf.getSortedWordCount()
                     data.append(fileData)
                     names.append(filename)
 
                     plotter = Plotter(fileData, filename, [filename],
                                       saveDir + '/' + self.app.getEntry('Group ' + str(i) + ' name'))
-                    plotter.barPlot()
-                    plotter.percentageBarPlot()
-                    plotter.scatterPlot()
-                    # plotter.generateTextFile()
+                    if self.options['bar']:
+                        plotter.barPlot(self.options['fileExtension'])
 
-                if len(data) > 1:
+                    if self.options['barPercentage']:
+                        plotter.percentageBarPlot(self.options['fileExtension'])
+
+                    if self.options['scatter']:
+                        plotter.scatterPlot(self.options['fileExtension'])
+
+                    if self.options['textFile']:
+                        plotter.generateTextFile()
+
+                if len(data) > 1 and self.options['groupGraphs']:
                     plotter = Plotter(data, self.app.getEntry('Group ' + str(i) + ' name'), names,
                                       saveDir + '/' + self.app.getEntry('Group ' + str(i) + ' name'), len(data))
-                    plotter.barPlot()
-                    plotter.percentageBarPlot()
-                    plotter.scatterPlot()
+                    plotter.barPlot(self.options['fileExtension'])
+                    plotter.percentageBarPlot(self.options['fileExtension'])
+                    plotter.scatterPlot(self.options['fileExtension'])
         except ValueError:
             self.app.errorBox('Error', 'An error has occurred while generating the plots. Please try again.')
 
@@ -180,44 +250,3 @@ class WordCountPlotter():
 
 app = WordCountPlotter()
 app.Start()
-'''
-pdf = PdfReader('Converging science and literature cultures_OAHS.pdf')
-data = pdf.getSortedWordCount()
-plotter.generateTextFile(data, pdf.getName())
-plotter.barPlot(data, pdf.getName())
-plotter.percentageBarPlot(data)
-
-pdf2 = PdfReader('Random texts do not exhibit the real Zipfs law-like rank distribution.pdf')
-data2 = pdf2.getSortedWordCount()
-plotter.generateTextFile(data2, pdf2.getName())
-plotter.barPlot(data2, pdf.getName())
-plotter.percentageBarPlot(data2)
-
-combinedData = plotter.addData([pdf.getWordCount(), pdf2.getWordCount()])
-plotter.barPlot(combinedData, 'combined')
-plotter.percentageBarPlot(combinedData)
-plotter.generateTextFile(combinedData, 'Combined data')
-'''
-'''
-pdf = PdfReader('documents/Bibliometry of marine science and limnology publications.pdf')
-data = pdf.getSortedWordCount()
-pdf2 = PdfReader('documents/Evaluation of Microleakage.pdf')
-data2 = pdf2.getSortedWordCount()
-plotter = Plotter([data, data2], 'two test', 2)
-plotter.scatterPlot()
-'''
-'''
-data = []
-names = []
-for doc in os.listdir('documents'):
-
-    pdf = PdfReader('documents/' + doc)
-    data.append(pdf.getSortedWordCount())
-    names.append(doc)
-
-plotter = Plotter(data, 'Primer grupo', names, len(data))
-plotter.scatterPlot()
-
-plotter.barPlot()
-plotter.percentageBarPlot()
-'''

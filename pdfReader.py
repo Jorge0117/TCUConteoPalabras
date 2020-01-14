@@ -7,18 +7,26 @@ class PdfReader:
     words = []
     wordCount = {}
 
-    def __init__(self, documentName, blacklist):
+    def __init__(self, documentName, blacklist, lowerCase, ignoreOneChar, removeSpecial):
         self.wordCount = {}
         self.documentName = documentName
         self.document = parser.from_file(documentName)
-        curatedWords = self.document['content'].replace(',', ' ').replace('.', ' ').replace('(', ' ').replace(')', ' ') \
-            .replace(';', ' ').replace(':', ' ').replace('/', ' ').replace('\\', ' ').replace('-', ' ').replace('[',
-                                                                                                                ' ') \
-            .replace(']', ' ').replace('-', ' ').replace('*', ' ').replace('|', ' ').replace('’', ' ').replace('%', ' ') \
-            .replace('~', ' ').replace('&', ' ')
+        if removeSpecial:
+            curatedWords = self.document['content'].replace(',', ' ').replace('.', ' ').replace('(', ' ').replace(')', ' ') \
+                .replace(';', ' ').replace(':', ' ').replace('/', ' ').replace('\\', ' ').replace('-', ' ').replace('[',
+                                                                                                                    ' ') \
+                .replace(']', ' ').replace('-', ' ').replace('*', ' ').replace('|', ' ').replace('’', ' ').replace('%', ' ') \
+                .replace('~', ' ').replace('&', ' ')
+        else:
+            curatedWords = self.document['content']
+
         curatedWords = ''.join([i for i in curatedWords if not i.isdigit()])
         self.words = curatedWords.split()
         for word in self.words:
+            if ignoreOneChar and len(word) == 1:
+                continue
+            if lowerCase:
+                word = word.lower()
             if word in blacklist:
                 self.words.remove(word)
             else:

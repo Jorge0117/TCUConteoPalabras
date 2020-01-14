@@ -20,7 +20,7 @@ class Plotter:
         self.output = output
 
     # Data is a list of tuples
-    def barPlot(self):
+    def barPlot(self, extension='.pdf'):
         data = self.addData()
         names = []
         values = []
@@ -47,10 +47,10 @@ class Plotter:
         # plt.show()
         if not os.path.exists(self.output):
             os.makedirs(self.output)
-        plt.savefig(self.output + '/' + self.title + '-bar.png')
+        plt.savefig(self.output + '/' + self.title + '-bar' + extension)
         plt.close()
 
-    def percentageBarPlot(self):
+    def percentageBarPlot(self, extension='.pdf'):
         data = self.addData()
         names = []
         values = []
@@ -75,7 +75,7 @@ class Plotter:
         # plt.show()
         if not os.path.exists(self.output):
             os.makedirs(self.output)
-        plt.savefig(self.output + '/' + self.title + '-percentage.png')
+        plt.savefig(self.output + '/' + self.title + '-percentage' + extension)
         plt.close()
 
     # Adds the words from multiple documents.
@@ -95,11 +95,11 @@ class Plotter:
 
     def generateTextFile(self):
         data = self.addData()
-        file = open(self.title + '  SortedWordCount.txt', 'w', encoding="utf-8")
+        file = open(self.output + '/' + self.title + '-SortedWordCount.txt', 'w', encoding="utf-8")
         for word in data:
             file.write(word[0] + ': ' + str(word[1]) + '\n')
 
-    def scatterPlot(self):
+    def scatterPlot(self, extension='.pdf'):
         tableData = []
         plt.figure(figsize=(15, 10))
         for i in range(self.datasets):
@@ -144,7 +144,7 @@ class Plotter:
 
         if not os.path.exists(self.output):
             os.makedirs(self.output)
-        plt.savefig(self.output + '/' + self.title + '.png')
+        plt.savefig(self.output + '/' + self.title + extension)
         plt.close()
 
     def bestFitSlope(self, x, y):
