@@ -27,7 +27,7 @@ class PdfReader:
                 continue
             if lowerCase:
                 word = word.lower()
-            if word in blacklist:
+            if word in blacklist and word in self.words:
                 self.words.remove(word)
             else:
                 if word in self.wordCount:

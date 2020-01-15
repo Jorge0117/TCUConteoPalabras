@@ -25,6 +25,7 @@ class WordCountPlotter:
         }
 
         app.setSize(800, 600)
+        app.setIcon('icons8-document-50.gif')
         app.setResizable(canResize=False)
         app.setTitle("Word count plotter")
         app.addLabel('title', 'Word Count Plotter')
@@ -242,8 +243,8 @@ class WordCountPlotter:
                     plotter.barPlot(self.options['fileExtension'])
                     plotter.percentageBarPlot(self.options['fileExtension'])
                     plotter.scatterPlot(self.options['fileExtension'])
-        except ValueError:
-            self.app.errorBox('Error', 'An error has occurred while generating the plots. Please try again.')
+        except Exception as e:
+            self.app.errorBox('Error', 'An error has occurred while generating the plots. Please try again.\n' + str(e))
 
         return
 
