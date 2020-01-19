@@ -109,9 +109,9 @@ class Plotter:
             for index in range(len(self.data[i])):
                 rank.append(log(index + 1, 10))
                 frequency.append(log(self.data[i][index][1], 10))
-            tableRow.append(round(self.bestFitSlope(rank, frequency), 2))
-            tableRow.append(round(frequency[0], 2))
-            tableData.append(tableRow)
+            #tableRow.append(round(self.bestFitSlope(rank, frequency), 2))
+            #tableRow.append(round(frequency[0], 2))
+            #tableData.append(tableRow)
 
             color = ""
             if i == 0: color = "b"
@@ -127,7 +127,16 @@ class Plotter:
             # plotting points as a scatter plot
             plt.scatter(rank, frequency, label=i, color=color, s=15)
             # Line of best fit
-            plt.plot(np.unique(rank), np.poly1d(np.polyfit(rank, frequency, 1))(np.unique(rank)), color=color)
+            # plt.plot(np.unique(rank), np.poly1d(np.polyfit(rank, frequency, 1))(np.unique(rank)), color=color)
+            # plt.plot([0, 2, 5], [3, 2, 1])
+            m, b = self.slope(rank, frequency)
+            bestFitY = []
+            for i in range(len(rank)):
+                bestFitY.append(m * rank[i] + b)
+            plt.plot(rank, bestFitY)
+            tableRow.append(round(m, 2))
+            tableRow.append(round(b, 2))
+            tableData.append(tableRow)
 
         # x-axis label
         plt.xlabel('Rank')
@@ -153,3 +162,17 @@ class Plotter:
         m = (((np.mean(xs) * np.mean(ys)) - np.mean(xs*ys)) /
          ((np.mean(xs)**2) - np.mean(xs**2)))
         return m
+
+    def slope(self, lx, ly):
+        x, y, xx, xy = 0, 0, 0, 0
+        n = len(lx)
+        for i in range(n):
+            x += lx[i]
+            y += ly[i]
+            xx += lx[i]**2
+            xy += lx[i] * ly[i]
+        m = (xy - (x * y) / n) / (xx - (x**2) / n)
+        meanX = x / n
+        meanY = y / n
+        b = meanY - m * meanX
+        return m, b

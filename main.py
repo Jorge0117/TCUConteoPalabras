@@ -10,6 +10,8 @@ class WordCountPlotter:
 
     def __init__(self):
         self.groupCount = 0
+        self.blacklist = []
+        self.oneCharWordExceptions = []
         app = gui()
 
         self.options = {
@@ -18,7 +20,7 @@ class WordCountPlotter:
             'bar': True,
             'barPercentage': True,
             'lowercase': True,
-            'ignoreOneWord': True,
+            'ignoreOneWord': False,
             'removeSpecial': True,
             'groupGraphs': True,
             'textFile': False
@@ -29,7 +31,6 @@ class WordCountPlotter:
         app.setResizable(canResize=False)
         app.setTitle("Word count plotter")
         app.addLabel('title', 'Word Count Plotter')
-        app.addButton('Blacklist words', self.OpenWordBlacklist)
         app.addButton('Options', self.OpenOptions)
         app.addButton('Add Group', self.AddGroup)
         app.startScrollPane('groups')
@@ -37,28 +38,13 @@ class WordCountPlotter:
         app.setScrollPaneWidth('groups', 100)
         app.addButton('Generate', self.Generate)
 
-        app.startSubWindow('Blacklisted Words', modal=True)
-        app.setSize(600, 500)
-        app.setResizable(canResize=False)
-        app.setLocation('center')
-
-        app.setSticky("news")
-        app.setExpand("both")
-        app.addLabel("blTitle", "Blacklisted words", 0, 0, 3)
-        app.addListBox("blacklistedWords", [], 1, 0, 2, 5)
-        app.addButton('Add Word', self.AddBLWord, 1, 2)
-        app.addButton('Remove Word', self.RemoveBLWord, 2, 2)
-        app.addButton('Clear Words', self.ClearBlWords, 3, 2)
-        app.addButton('Load File', self.OpenBLFile, 4, 2)
-        app.addButton('Save File', self.SaveBLFile, 5, 2)
-
-        app.stopSubWindow()
-
         app.startSubWindow("Options", modal=True)
-        app.setSize(630, 300)
+        app.setSize(630, 500)
         app.setResizable(canResize=False)
         app.setLocation('center')
 
+        app.startTabbedFrame("OptionsTab", 0, 0, rowspan=3)
+        app.startTab("General")
         app.setExpand("both")
         app.addLabel("opTitle", "Options", 0, 0, 3)
         app.setSticky('w')
@@ -71,13 +57,46 @@ class WordCountPlotter:
         app.addCheckBox("Bar (Word percentage)", 4, 2)
         app.addLabel("Options", "Options", 5, 0)
         app.addCheckBox("Lower case", 6, 0)
-        app.addCheckBox("Ignore one character words", 6, 1)
+        #app.addCheckBox("Ignore one character words", 6, 1)
         app.addCheckBox("Remove special characters", 6, 2)
         app.addCheckBox("Generate group graphs", 7, 0)
         app.addCheckBox("Generate text file", 7, 1)
+        app.stopTab()
+
+        app.startTab('Ignore words')
+
+        app.setSticky("news")
+        app.setExpand("both")
+        app.addLabel("blTitle", "Ignore words", 0, 0, 3)
+        app.addListBox("blacklistedWords", [], 1, 0, 2, 5)
+        app.addNamedButton('Add Word', 'addBL', self.AddWord, 1, 2)
+        app.addNamedButton('Remove Word', 'removeBL', self.RemoveWord, 2, 2)
+        app.addNamedButton('Clear Words', 'clearBL', self.ClearWords, 3, 2)
+        app.addNamedButton('Load File', 'loadBL', self.OpenFile, 4, 2)
+        app.addNamedButton('Save File', 'saveBL', self.SaveFile, 5, 2)
+
+        app.stopTab()
+
+        app.startTab('One character words')
+
+        app.setSticky("news")
+        app.setExpand("both")
+        app.addCheckBox('Ignore one character words', 0, 0, 3)
+        app.addHorizontalSeparator(1, 0, 3)
+        app.addLabel('OCExceptions', 'Ignore one character word exceptions', 2, 0, 3)
+        app.addListBox("oneCharExceptions", [], 3, 0, 2, 5)
+        app.addNamedButton('Add Word', 'addOC', self.AddWord, 3, 2)
+        app.addNamedButton('Remove Word', 'removeOC', self.RemoveWord, 4, 2)
+        app.addNamedButton('Clear Words', 'clearOC', self.ClearWords, 5, 2)
+        app.addNamedButton('Load File', 'loadOC', self.OpenFile, 6, 2)
+        app.addNamedButton('Save File', 'saveOC', self.SaveFile, 7, 2)
+
+        app.stopTab()
+
+        app.stopTabbedFrame()
 
         app.setSticky('')
-        app.addButton("Save", self.SaveOptions, 8, 0, 3)
+        app.addButton("Save", self.SaveOptions, 3, 0)
 
         app.stopSubWindow()
 
@@ -121,6 +140,7 @@ class WordCountPlotter:
             self.app.setMessage("Selected Files " + str(index), text)
 
     def OpenOptions(self):
+        self.LoadWordLists()
         self.app.setRadioButton('outputType', self.options['fileExtension'])
         self.app.setCheckBox('Scatter', self.options['scatter'])
         self.app.setCheckBox('Bar (Word count)', self.options['bar'])
@@ -142,28 +162,66 @@ class WordCountPlotter:
         self.options['removeSpecial'] = self.app.getCheckBox('Remove special characters')
         self.options['groupGraphs'] = self.app.getCheckBox('Generate group graphs')
         self.options['textFile'] = self.app.getCheckBox('Generate text file')
+
+        self.blacklist = self.app.getAllListItems('blacklistedWords')
+        self.oneCharWordExceptions = self.app.getAllListItems('oneCharExceptions')
         self.app.hideSubWindow('Options')
 
-    def OpenWordBlacklist(self):
-        self.app.showSubWindow('Blacklisted Words')
-
-    def AddBLWord(self):
-        word = self.app.stringBox('Blacklist Word', 'Write the word you would like to blacklist',
-                                  parent='Blacklisted Words')
-        if word is not None and word is not '':
-            self.app.addListItem('blacklistedWords', word)
-
-    def RemoveBLWord(self):
-        word = self.app.getListBox('blacklistedWords')
-        if len(word) > 0:
-            self.app.removeListItem('blacklistedWords', word)
-
-    def ClearBlWords(self):
+    def LoadWordLists(self):
         self.app.clearListBox('blacklistedWords')
+        for word in self.blacklist:
+            if word is not '':
+                self.app.addListItem('blacklistedWords', word)
 
-    def OpenBLFile(self):
+        self.app.clearListBox('oneCharExceptions')
+        for word in self.oneCharWordExceptions:
+            self.app.addListItem('oneCharExceptions', word)
+
+    def AddWord(self, btn):
+        wordList = ''
+        if btn == 'addBL':
+            wordList = 'blacklistedWords'
+        elif btn == 'addOC':
+            wordList = 'oneCharExceptions'
+        else:
+            return
+        word = self.app.stringBox('Blacklist Word', 'Write the word you would like to ' + wordList,
+                                  parent='Options')
+        if word is not None and word is not '':
+            self.app.addListItem(wordList, word)
+
+    def RemoveWord(self, btn):
+        wordList = ''
+        if btn == 'removeBL':
+            wordList = 'blacklistedWords'
+        elif btn == 'removeOC':
+            wordList = 'oneCharExceptions'
+        else:
+            return
+        word = self.app.getListBox(wordList)
+        if len(word) > 0:
+            self.app.removeListItem(wordList, word)
+
+    def ClearWords(self, btn):
+        wordList = ''
+        if btn == 'clearBL':
+            wordList = 'blacklistedWords'
+        elif btn == 'clearOC':
+            wordList = 'oneCharExceptions'
+        else:
+            return
+        self.app.clearListBox(wordList)
+
+    def OpenFile(self, btn):
+        wordList = ''
+        if btn == 'loadBL':
+            wordList = 'blacklistedWords'
+        elif btn == 'loadOC':
+            wordList = 'oneCharExceptions'
+        else:
+            return
         try:
-            fileDir = self.app.openBox(fileTypes=[('text', '*.txt')], parent='Blacklisted Words')
+            fileDir = self.app.openBox(fileTypes=[('text', '*.txt')], parent='Options')
             filename, fileExtension = os.path.splitext(fileDir)
 
             if fileDir is not None:
@@ -176,15 +234,22 @@ class WordCountPlotter:
                 words = file.read().split('\n')
                 for word in words:
                     if word is not '':
-                        self.app.addListItem('blacklistedWords', word)
+                        self.app.addListItem(wordList, word)
         except Exception as e:
             self.app.errorBox('Error', 'An error occurred while opening the file. Make sure the format is correct.')
             print(e)
 
-    def SaveBLFile(self):
+    def SaveFile(self, btn):
+        wordList = ''
+        if btn == 'saveBL':
+            wordList = 'blacklistedWords'
+        elif btn == 'saveOC':
+            wordList = 'oneCharExceptions'
+        else:
+            return
         try:
-            words = self.app.getAllListItems('blacklistedWords')
-            saveDir = self.app.saveBox('Save Location', 'blacklisted_words', fileExt=".txt", parent='Blacklisted Words')
+            words = self.app.getAllListItems(wordList)
+            saveDir = self.app.saveBox('Save Location', 'blacklisted_words', fileExt=".txt", parent='Options')
             if saveDir is not None:
                 file = open(saveDir, 'w', encoding="utf-8")
                 for word in words:
@@ -210,15 +275,13 @@ class WordCountPlotter:
         saveDir = self.app.directoryBox()
         if saveDir == '':
             return
-
-        blacklist = self.app.getAllListItems('blacklistedWords')
         try:
             for i in range(len(self.files)):
                 data = []
                 names = []
                 for j in range(len(self.files[i])):
                     filename = ntpath.basename(self.files[i][j])
-                    pdf = PdfReader(self.files[i][j], blacklist, self.options['lowercase'], self.options['ignoreOneWord'], self.options['removeSpecial'])
+                    pdf = PdfReader(self.files[i][j], self.blacklist, self.options['lowercase'], self.options['ignoreOneWord'], self.oneCharWordExceptions, self.options['removeSpecial'])
                     fileData = pdf.getSortedWordCount()
                     data.append(fileData)
                     names.append(filename)

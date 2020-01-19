@@ -7,15 +7,17 @@ class PdfReader:
     words = []
     wordCount = {}
 
-    def __init__(self, documentName, blacklist, lowerCase, ignoreOneChar, removeSpecial):
+    def __init__(self, documentName, blacklist, lowerCase, ignoreOneChar, oneCharExceptions, removeSpecial):
         self.wordCount = {}
         self.documentName = documentName
         self.document = parser.from_file(documentName)
         if removeSpecial:
-            curatedWords = self.document['content'].replace(',', ' ').replace('.', ' ').replace('(', ' ').replace(')', ' ') \
+            curatedWords = self.document['content'].replace(',', ' ').replace('.', ' ').replace('(', ' ').replace(')',
+                                                                                                                  ' ') \
                 .replace(';', ' ').replace(':', ' ').replace('/', ' ').replace('\\', ' ').replace('-', ' ').replace('[',
                                                                                                                     ' ') \
-                .replace(']', ' ').replace('-', ' ').replace('*', ' ').replace('|', ' ').replace('’', ' ').replace('%', ' ') \
+                .replace(']', ' ').replace('-', ' ').replace('*', ' ').replace('|', ' ').replace('’', ' ').replace('%',
+                                                                                                                   ' ') \
                 .replace('~', ' ').replace('&', ' ')
         else:
             curatedWords = self.document['content']
@@ -23,10 +25,11 @@ class PdfReader:
         curatedWords = ''.join([i for i in curatedWords if not i.isdigit()])
         self.words = curatedWords.split()
         for word in self.words:
-            if ignoreOneChar and len(word) == 1:
-                continue
             if lowerCase:
                 word = word.lower()
+            if ignoreOneChar and len(word) == 1:
+                if word not in oneCharExceptions:
+                    continue
             if word in blacklist and word in self.words:
                 self.words.remove(word)
             else:
@@ -49,4 +52,3 @@ class PdfReader:
 
     def sortWordCount(self, wordCount):
         return sorted(wordCount.items(), key=lambda kv: kv[1], reverse=True)
-
