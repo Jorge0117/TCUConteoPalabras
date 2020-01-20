@@ -7,11 +7,14 @@ from plotter import Plotter
 
 
 class WordCountPlotter:
-
+    # pyinstaller main.py --hidden-import=appJar
     def __init__(self):
         self.groupCount = 0
         self.blacklist = []
         self.oneCharWordExceptions = []
+        self.removeCharacters = [
+            ',', '.', '(', ')', ';', ':', '/', '\\', '[', ']', '*', '|', '’', '%', '~', '&', '‒', '–', '—', '―', '⁓'
+        ]
         app = gui()
 
         self.options = {
@@ -57,8 +60,8 @@ class WordCountPlotter:
         app.addCheckBox("Bar (Word percentage)", 4, 2)
         app.addLabel("Options", "Options", 5, 0)
         app.addCheckBox("Lower case", 6, 0)
-        #app.addCheckBox("Ignore one character words", 6, 1)
-        app.addCheckBox("Remove special characters", 6, 2)
+        # app.addCheckBox("Ignore one character words", 6, 1)
+        # app.addCheckBox("Remove special characters", 6, 2)
         app.addCheckBox("Generate group graphs", 7, 0)
         app.addCheckBox("Generate text file", 7, 1)
         app.stopTab()
@@ -93,6 +96,20 @@ class WordCountPlotter:
 
         app.stopTab()
 
+        app.startTab('Remove characters')
+
+        app.setSticky("news")
+        app.setExpand("both")
+        app.addCheckBox('Remove characters', 0, 0, 3)
+        app.addHorizontalSeparator(1, 0, 3)
+        app.addLabel('RCRemove', 'Characters to remove', 2, 0, 3)
+        app.addListBox("RCCharacters", [], 3, 0, 2, 5)
+        app.addNamedButton('Add Word', 'addRC', self.AddWord, 3, 2)
+        app.addNamedButton('Remove Word', 'removeRC', self.RemoveWord, 4, 2)
+        app.addNamedButton('Clear Words', 'clearRC', self.ClearWords, 5, 2)
+        app.addNamedButton('Load File', 'loadRC', self.OpenFile, 6, 2)
+        app.addNamedButton('Save File', 'saveRC', self.SaveFile, 7, 2)
+        app.stopTab()
         app.stopTabbedFrame()
 
         app.setSticky('')
@@ -186,7 +203,7 @@ class WordCountPlotter:
         self.app.setCheckBox('Bar (Word percentage)', self.options['barPercentage'])
         self.app.setCheckBox('Lower case', self.options['lowercase'])
         self.app.setCheckBox('Ignore one character words', self.options['ignoreOneWord'])
-        self.app.setCheckBox('Remove special characters', self.options['removeSpecial'])
+        self.app.setCheckBox('Remove characters', self.options['removeSpecial'])
         self.app.setCheckBox('Generate group graphs', self.options['groupGraphs'])
         self.app.setCheckBox('Generate text file', self.options['textFile'])
         self.app.showSubWindow('Options')
@@ -198,12 +215,13 @@ class WordCountPlotter:
         self.options['barPercentage'] = self.app.getCheckBox('Bar (Word percentage)')
         self.options['lowercase'] = self.app.getCheckBox('Lower case')
         self.options['ignoreOneWord'] = self.app.getCheckBox('Ignore one character words')
-        self.options['removeSpecial'] = self.app.getCheckBox('Remove special characters')
+        self.options['removeSpecial'] = self.app.getCheckBox('Remove characters')
         self.options['groupGraphs'] = self.app.getCheckBox('Generate group graphs')
         self.options['textFile'] = self.app.getCheckBox('Generate text file')
 
         self.blacklist = self.app.getAllListItems('blacklistedWords')
         self.oneCharWordExceptions = self.app.getAllListItems('oneCharExceptions')
+        self.removeCharacters = self.app.getAllListItems('RCCharacters')
         self.app.hideSubWindow('Options')
 
     def LoadWordLists(self):
@@ -216,12 +234,18 @@ class WordCountPlotter:
         for word in self.oneCharWordExceptions:
             self.app.addListItem('oneCharExceptions', word)
 
+        self.app.clearListBox('RCCharacters')
+        for word in self.removeCharacters:
+            self.app.addListItem('RCCharacters', word)
+
     def AddWord(self, btn):
         wordList = ''
         if btn == 'addBL':
             wordList = 'blacklistedWords'
         elif btn == 'addOC':
             wordList = 'oneCharExceptions'
+        elif btn == 'addRC':
+            wordList = 'RCCharacters'
         else:
             return
         word = self.app.stringBox('Blacklist Word', 'Write the word you would like to ' + wordList,
@@ -235,6 +259,8 @@ class WordCountPlotter:
             wordList = 'blacklistedWords'
         elif btn == 'removeOC':
             wordList = 'oneCharExceptions'
+        elif btn == 'removeRC':
+            wordList = 'RCCharacters'
         else:
             return
         word = self.app.getListBox(wordList)
@@ -247,6 +273,8 @@ class WordCountPlotter:
             wordList = 'blacklistedWords'
         elif btn == 'clearOC':
             wordList = 'oneCharExceptions'
+        elif btn == 'clearRC':
+            wordList = 'RCCharacters'
         else:
             return
         self.app.clearListBox(wordList)
@@ -257,6 +285,8 @@ class WordCountPlotter:
             wordList = 'blacklistedWords'
         elif btn == 'loadOC':
             wordList = 'oneCharExceptions'
+        elif btn == 'loadRC':
+            wordList = 'RCCharacters'
         else:
             return
         try:
@@ -284,6 +314,8 @@ class WordCountPlotter:
             wordList = 'blacklistedWords'
         elif btn == 'saveOC':
             wordList = 'oneCharExceptions'
+        elif btn == 'saveRC':
+            wordList = 'RCCharacters'
         else:
             return
         try:
@@ -294,8 +326,8 @@ class WordCountPlotter:
                 for word in words:
                     file.write(word + '\n')
                 file.close()
-        except:
-            self.app.errorBox('Error', 'An error occurred while saving the file.')
+        except Exception as e:
+            self.app.errorBox('Error', 'An error occurred while saving the file.\n' + str(e))
 
     def Generate(self):
         if len(self.files) == 0:
@@ -320,7 +352,9 @@ class WordCountPlotter:
                 names = []
                 for j in range(len(self.files[i])):
                     filename = ntpath.basename(self.files[i][j])
-                    pdf = PdfReader(self.files[i][j], self.blacklist, self.options['lowercase'], self.options['ignoreOneWord'], self.oneCharWordExceptions, self.options['removeSpecial'])
+                    pdf = PdfReader(self.files[i][j], self.blacklist, self.options['lowercase'],
+                                    self.options['ignoreOneWord'], self.oneCharWordExceptions,
+                                    self.options['removeSpecial'], self.removeCharacters)
                     fileData = pdf.getSortedWordCount()
                     data.append(fileData)
                     names.append(filename)

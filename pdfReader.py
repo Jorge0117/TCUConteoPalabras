@@ -7,20 +7,14 @@ class PdfReader:
     words = []
     wordCount = {}
 
-    def __init__(self, documentName, blacklist, lowerCase, ignoreOneChar, oneCharExceptions, removeSpecial):
+    def __init__(self, documentName, blacklist, lowerCase, ignoreOneChar, oneCharExceptions, removeSpecial, removeList):
         self.wordCount = {}
         self.documentName = documentName
         self.document = parser.from_file(documentName)
+        curatedWords = self.document['content']
         if removeSpecial:
-            curatedWords = self.document['content'].replace(',', ' ').replace('.', ' ').replace('(', ' ').replace(')',
-                                                                                                                  ' ') \
-                .replace(';', ' ').replace(':', ' ').replace('/', ' ').replace('\\', ' ').replace('-', ' ').replace('[',
-                                                                                                                    ' ') \
-                .replace(']', ' ').replace('-', ' ').replace('*', ' ').replace('|', ' ').replace('’', ' ').replace('%',
-                                                                                                                   ' ') \
-                .replace('~', ' ').replace('&', ' ')
-        else:
-            curatedWords = self.document['content']
+            for char in removeList:
+                curatedWords = curatedWords.replace(char, ' ')
 
         curatedWords = ''.join([i for i in curatedWords if not i.isdigit()])
         self.words = curatedWords.split()

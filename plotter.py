@@ -36,7 +36,7 @@ class Plotter:
         print(names)
         '''
 
-        plt.rc('font', family='serif', size=8)
+        plt.rc('font', family='Calibri', size=8)
         plt.figure(figsize=(25, 6))
         plt.title(self.title)
         #plt.xlabel('Words')
@@ -64,7 +64,7 @@ class Plotter:
         for i in range(len(values)):
             values[i] = values[i] / total * 100
 
-        plt.rc('font', family='serif', size=8)
+        plt.rc('font', family='Calibri', size=8)
         plt.figure(figsize=(25, 6))
         plt.title(self.title)
         #plt.xlabel = 'Words'
@@ -101,6 +101,7 @@ class Plotter:
 
     def scatterPlot(self, extension='.pdf'):
         tableData = []
+        plt.rc('font', family='Calibri', size=8)
         plt.figure(figsize=(15, 10))
         for i in range(self.datasets):
             tableRow = [i, self.names[i]]
