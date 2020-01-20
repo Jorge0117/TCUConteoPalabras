@@ -113,6 +113,16 @@ class Plotter:
             #tableRow.append(round(frequency[0], 2))
             #tableData.append(tableRow)
 
+            # if not os.path.exists(self.output):
+            #     os.makedirs(self.output)
+            # file = open(self.output + '/' + self.title + '.txt', 'w', encoding="utf-8")
+            # file.write('Rank: ')
+            # for word in rank:
+            #     file.write(str(word) + ', ')
+            # file.write('\n\nFrequency: ')
+            # for word in frequency:
+            #     file.write(str(word) + ', ')
+
             color = ""
             if i == 0: color = "b"
             elif i == 1: color = "g"

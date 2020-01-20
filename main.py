@@ -109,14 +109,53 @@ class WordCountPlotter:
     def AddGroup(self):
         self.app.openScrollPane('groups')
         self.app.startLabelFrame('Group ' + str(self.groupCount))
-        self.app.addLabelEntry('Group ' + str(self.groupCount) + ' name')
+        self.app.addLabelEntry('Group ' + str(self.groupCount) + ' name', 0, 0, 2)
         self.app.setEntryWidth('Group ' + str(self.groupCount) + ' name', 72)
-        self.app.addMessage("Selected Files " + str(self.groupCount), """No files selected""")
+        self.app.addMessage("Selected Files " + str(self.groupCount), """No files selected""", 1, 0, 2)
         self.app.setMessageWidth("Selected Files " + str(self.groupCount), 900)
-        self.app.addNamedButton('Select files', 'files' + str(self.groupCount), self.SelectFiles)
+        self.app.addNamedButton('Select files', 'files' + str(self.groupCount), self.SelectFiles, 2, 0, 1)
+        self.app.setSticky('e')
+        self.app.addNamedButton('Remove group', 'remove' + str(self.groupCount), self.RemoveGroup, 2, 1, 1)
         self.app.stopLabelFrame()
         self.groupCount += 1
         self.files.append([])
+        self.app.stopScrollPane()
+
+    def RemoveGroup(self, btn):
+        index = int(btn[6:])
+        groupNames = []
+        del self.files[index]
+
+        self.app.openScrollPane('groups')
+
+        for i in range(index, self.groupCount):
+            groupNames.append(self.app.getEntry('Group ' + str(i) + ' name'))
+            self.app.removeLabelFrame('Group ' + str(i))
+
+        self.groupCount -= 1
+
+        for i in range(index, self.groupCount):
+            fileText = ''
+            self.app.startLabelFrame('Group ' + str(i))
+            self.app.addLabelEntry('Group ' + str(i) + ' name', 0, 0, 2)
+            self.app.setEntry('Group ' + str(i) + ' name', groupNames[i])
+            self.app.setEntryWidth('Group ' + str(i) + ' name', 72)
+
+            if len(self.files[i]) > 0:
+                for j in range(len(self.files[i])):
+                    fileText += self.files[i][j]
+                    if i < len(self.files[i]) - 1:
+                        fileText += '\n'
+            else:
+                fileText = 'No files selected'
+
+            self.app.addMessage("Selected Files " + str(i), fileText, 1, 0, 2)
+            self.app.setMessageWidth("Selected Files " + str(i), 900)
+            self.app.addNamedButton('Select files', 'files' + str(i), self.SelectFiles, 2, 0, 1)
+            self.app.setSticky('e')
+            self.app.addNamedButton('Remove group', 'remove' + str(i), self.RemoveGroup, 2, 1, 1)
+            self.app.stopLabelFrame()
+
         self.app.stopScrollPane()
 
     def SelectFiles(self, btn):
