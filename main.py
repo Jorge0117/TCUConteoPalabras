@@ -54,16 +54,16 @@ class WordCountPlotter:
         app.addLabel("output", "Output file extension", 1, 0)
         app.addRadioButton("outputType", ".pdf", 2, 0)
         app.addRadioButton("outputType", ".png", 2, 1)
-        app.addLabel("graphTypes", "Output graphs", 3, 0)
+        app.addLabel("graphTypes", "Output plots", 3, 0)
         app.addCheckBox("Scatter", 4, 0)
         app.addCheckBox("Bar (Word count)", 4, 1)
         app.addCheckBox("Bar (Word percentage)", 4, 2)
         app.addLabel("Options", "Options", 5, 0)
-        app.addCheckBox("Lower case", 6, 0)
+        app.addCheckBox("Lowercase", 6, 0)
         # app.addCheckBox("Ignore one character words", 6, 1)
         # app.addCheckBox("Remove special characters", 6, 2)
-        app.addCheckBox("Generate group graphs", 7, 0)
-        app.addCheckBox("Generate text file", 7, 1)
+        app.addCheckBox("Generate group plots", 6, 1)
+        app.addCheckBox("Generate text file", 6, 2)
         app.stopTab()
 
         app.startTab('Ignore words')
@@ -177,7 +177,7 @@ class WordCountPlotter:
 
     def SelectFiles(self, btn):
         files = self.app.openBox(multiple=True, fileTypes=[('document', '*.pdf')])
-        if len(files) > 0:
+        if 0 < len(files) <= 10:
             index = int(btn[5:])
             text = ''
 
@@ -195,16 +195,19 @@ class WordCountPlotter:
             self.files[index] = files
             self.app.setMessage("Selected Files " + str(index), text)
 
+        elif len(files) > 10:
+            self.app.errorBox('Error', 'The maximum amount of files in a group is 10.')
+
     def OpenOptions(self):
         self.LoadWordLists()
         self.app.setRadioButton('outputType', self.options['fileExtension'])
         self.app.setCheckBox('Scatter', self.options['scatter'])
         self.app.setCheckBox('Bar (Word count)', self.options['bar'])
         self.app.setCheckBox('Bar (Word percentage)', self.options['barPercentage'])
-        self.app.setCheckBox('Lower case', self.options['lowercase'])
+        self.app.setCheckBox('Lowercase', self.options['lowercase'])
         self.app.setCheckBox('Ignore one character words', self.options['ignoreOneWord'])
         self.app.setCheckBox('Remove characters', self.options['removeSpecial'])
-        self.app.setCheckBox('Generate group graphs', self.options['groupGraphs'])
+        self.app.setCheckBox('Generate group plots', self.options['groupGraphs'])
         self.app.setCheckBox('Generate text file', self.options['textFile'])
         self.app.showSubWindow('Options')
 
@@ -213,10 +216,10 @@ class WordCountPlotter:
         self.options['scatter'] = self.app.getCheckBox('Scatter')
         self.options['bar'] = self.app.getCheckBox('Bar (Word count)')
         self.options['barPercentage'] = self.app.getCheckBox('Bar (Word percentage)')
-        self.options['lowercase'] = self.app.getCheckBox('Lower case')
+        self.options['lowercase'] = self.app.getCheckBox('Lowercase')
         self.options['ignoreOneWord'] = self.app.getCheckBox('Ignore one character words')
         self.options['removeSpecial'] = self.app.getCheckBox('Remove characters')
-        self.options['groupGraphs'] = self.app.getCheckBox('Generate group graphs')
+        self.options['groupGraphs'] = self.app.getCheckBox('Generate group plots')
         self.options['textFile'] = self.app.getCheckBox('Generate text file')
 
         self.blacklist = self.app.getAllListItems('blacklistedWords')
