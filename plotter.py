@@ -3,6 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from math import log
+from Ajuste_de_palabras import calculateBestFit
 
 
 class Plotter:
@@ -140,13 +141,16 @@ class Plotter:
             # Line of best fit
             # plt.plot(np.unique(rank), np.poly1d(np.polyfit(rank, frequency, 1))(np.unique(rank)), color=color)
             # plt.plot([0, 2, 5], [3, 2, 1])
-            m, b = self.slope(rank, frequency)
-            bestFitY = []
-            for i in range(len(rank)):
-                bestFitY.append(m * rank[i] + b)
-            plt.plot(rank, bestFitY)
-            tableRow.append(round(m, 2))
-            tableRow.append(round(b, 2))
+            bfx, bfy, alpha, beta = self.bestFit(rank, frequency)
+            #bestFitY = []
+            #for i in range(len(rank)):
+                #bestFitY.append(m * rank[i] + b)
+            #plt.plot(rank, bestFitY)
+            plt.plot(bfx, bfy)
+            #tableRow.append(round(m, 2))
+            #tableRow.append(round(b, 2))
+            tableRow.append(round(alpha, 2))
+            tableRow.append(round(beta, 2))
             tableData.append(tableRow)
 
         # x-axis label
@@ -159,7 +163,7 @@ class Plotter:
         # function to show the plot
         # plt.show()
 
-        the_table = plt.table(cellText=tableData, colLabels=('id', 'name', 'm', 'b'), loc='right', colWidths=[0.065, 0.45, 0.065, 0.065], colLoc='center', cellLoc='center')
+        the_table = plt.table(cellText=tableData, colLabels=('id', 'name', 'alpha', 'beta'), loc='right', colWidths=[0.065, 0.45, 0.065, 0.065], colLoc='center', cellLoc='center')
         plt.subplots_adjust(right=0.6)
 
         if not os.path.exists(self.output):
@@ -167,14 +171,8 @@ class Plotter:
         plt.savefig(self.output + '/' + self.title + extension)
         plt.close()
 
-    def bestFitSlope(self, x, y):
-        xs = np.array(x, dtype=np.float64)
-        ys = np.array(y, dtype=np.float64)
-        m = (((np.mean(xs) * np.mean(ys)) - np.mean(xs*ys)) /
-         ((np.mean(xs)**2) - np.mean(xs**2)))
-        return m
-
-    def slope(self, lx, ly):
+    def bestFit(self, lx, ly):
+        return calculateBestFit(lx, ly)
         x, y, xx, xy = 0, 0, 0, 0
         n = len(lx)
         for i in range(n):
